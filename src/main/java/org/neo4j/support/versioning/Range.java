@@ -118,7 +118,8 @@ public class Range implements Comparable<Range>
         return result;
     }
 
-    public int compareTo( Range o )
+    @Override
+	public int compareTo( Range o )
     {
         return Long.valueOf( from ).compareTo( o.from );
     }
