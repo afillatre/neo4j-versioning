@@ -36,22 +36,24 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.neo4j.graphdb.Direction;
+import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.RelationshipType;
 import org.neo4j.graphdb.Transaction;
 import org.neo4j.helpers.collection.IteratorUtil;
-import org.neo4j.test.ImpermanentGraphDatabase;
+import org.neo4j.test.TestGraphDatabaseFactory;
 
 public class VersionedGraphTest {
-	private org.neo4j.test.ImpermanentGraphDatabase graphDb;
+	private GraphDatabaseService graphDb;
 	private VersioningTransactionEventHandler versioningTransactionEventHandler;
 
+	@SuppressWarnings("deprecation")
 	@Before
 	public void setUp() throws IOException {
-		graphDb = new ImpermanentGraphDatabase();
-		versioningTransactionEventHandler = new VersioningTransactionEventHandler(graphDb.getReferenceNode());
+		graphDb = new TestGraphDatabaseFactory().newImpermanentDatabase();
+		versioningTransactionEventHandler = new VersioningTransactionEventHandler(graphDb.createNode());
 		graphDb.registerTransactionEventHandler(versioningTransactionEventHandler);
 	}
 

@@ -33,70 +33,85 @@ public class VersionedRelationship implements Relationship {
 		this.versionContext = versionContext;
 	}
 
+	@Override
 	public long getId() {
 		return relationship.getId();
 	}
 
+	@Override
 	public void delete() {
 		versionContext.deleteRelationship(relationship);
 	}
 
+	@Override
 	public Node getStartNode() {
 		return new VersionedNode(relationship.getStartNode(), versionContext);
 	}
 
+	@Override
 	public Node getEndNode() {
 		return new VersionedNode(relationship.getEndNode(), versionContext);
 	}
 
+	@Override
 	public Node getOtherNode(Node node) {
 		return new VersionedNode(relationship.getOtherNode(node), versionContext);
 	}
 
+	@Override
 	public Node[] getNodes() {
 		Node[] nodes = relationship.getNodes();
 		return new Node[] { new VersionedNode(nodes[0], versionContext), new VersionedNode(nodes[1], versionContext) };
 	}
 
+	@Override
 	public RelationshipType getType() {
 		return relationship.getType();
 	}
 
+	@Override
 	public boolean isType(RelationshipType type) {
 		return relationship.isType(type);
 	}
 
+	@Override
 	public GraphDatabaseService getGraphDatabase() {
 		return relationship.getGraphDatabase();
 	}
 
+	@Override
 	public boolean hasProperty(String key) {
 		return relationship.hasProperty(key);
 	}
 
+	@Override
 	public Object getProperty(String key) {
 		return relationship.getProperty(key);
 	}
 
+	@Override
 	public Object getProperty(String key, Object defaultValue) {
 		return relationship.getProperty(key, defaultValue);
 	}
 
+	@Override
 	public void setProperty(String key, Object value) {
 		relationship.setProperty(key, value);
 	}
 
+	@Override
 	public Object removeProperty(String key) {
 		return relationship.removeProperty(key);
 	}
 
+	@Override
 	public Iterable<String> getPropertyKeys() {
 		return relationship.getPropertyKeys();
 	}
 
-	public Iterable<Object> getPropertyValues() {
-		return relationship.getPropertyValues();
-	}
+	/*	TODO public Iterable<Object> getPropertyValues() {
+			return relationship.getPropertyValues();
+		}*/
 
 	@Override
 	public int hashCode() {

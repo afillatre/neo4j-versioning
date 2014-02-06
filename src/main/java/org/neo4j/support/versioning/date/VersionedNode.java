@@ -23,6 +23,7 @@ import java.util.Iterator;
 
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.NotFoundException;
 import org.neo4j.graphdb.Relationship;
@@ -43,26 +44,32 @@ public class VersionedNode implements Node {
 		this.versionContext = versionContext;
 	}
 
+	@Override
 	public long getId() {
 		return node.getId();
 	}
 
+	@Override
 	public void delete() {
 		versionContext.deleteNode(node);
 	}
 
+	@Override
 	public Iterable<Relationship> getRelationships() {
 		return getValidRelationships(node.getRelationships());
 	}
 
+	@Override
 	public Iterable<Relationship> getRelationships(Direction dir) {
 		return getValidRelationships(node.getRelationships(dir));
 	}
 
+	@Override
 	public Iterable<Relationship> getRelationships(RelationshipType... types) {
 		return getValidRelationships(node.getRelationships(types));
 	}
 
+	@Override
 	public Iterable<Relationship> getRelationships(RelationshipType type, Direction dir) {
 		return getValidRelationships(node.getRelationships(type, dir));
 	}
@@ -74,6 +81,7 @@ public class VersionedNode implements Node {
 
 	private Iterable<Relationship> getValidRelationships(Iterable<Relationship> relationships) {
 		return new IterableWrapper<Relationship, Relationship>(new FilteringIterable<Relationship>(relationships, new Predicate<Relationship>() {
+			@Override
 			public boolean accept(Relationship item) {
 				boolean valid = versionContext.hasValidVersion(item);
 				System.out.println("Inspecting rel: " + item + " (valid=" + valid + ")");
@@ -88,18 +96,22 @@ public class VersionedNode implements Node {
 		};
 	}
 
+	@Override
 	public boolean hasRelationship() {
 		return getRelationships().iterator().hasNext();
 	}
 
+	@Override
 	public boolean hasRelationship(Direction dir) {
 		return getRelationships(dir).iterator().hasNext();
 	}
 
+	@Override
 	public boolean hasRelationship(RelationshipType... types) {
 		return getRelationships(types).iterator().hasNext();
 	}
 
+	@Override
 	public boolean hasRelationship(RelationshipType type, Direction dir) {
 		return getRelationships(type, dir).iterator().hasNext();
 	}
@@ -109,6 +121,7 @@ public class VersionedNode implements Node {
 		return getRelationships(direction, types).iterator().hasNext();
 	}
 
+	@Override
 	public Relationship getSingleRelationship(RelationshipType type, Direction dir) {
 		Iterator<Relationship> iter = getRelationships(type, dir).iterator();
 		if (!iter.hasNext()) {
@@ -120,48 +133,59 @@ public class VersionedNode implements Node {
 		return single;
 	}
 
+	@Override
 	public Relationship createRelationshipTo(Node otherNode, RelationshipType type) {
 		return new VersionedRelationship(node.createRelationshipTo(otherNode, type), versionContext);
 	}
 
+	@Override
 	public Traverser traverse(Traverser.Order traversalOrder, StopEvaluator stopEvaluator, ReturnableEvaluator returnableEvaluator, RelationshipType relationshipType,
 			Direction direction) {
 		throw new UnsupportedOperationException("Not implemented.");
 	}
 
+	@Override
 	public Traverser traverse(Traverser.Order traversalOrder, StopEvaluator stopEvaluator, ReturnableEvaluator returnableEvaluator, RelationshipType firstRelationshipType,
 			Direction firstDirection, RelationshipType secondRelationshipType, Direction secondDirection) {
 		throw new UnsupportedOperationException("Not implemented.");
 	}
 
+	@Override
 	public Traverser traverse(Traverser.Order traversalOrder, StopEvaluator stopEvaluator, ReturnableEvaluator returnableEvaluator, Object... relationshipTypesAndDirections) {
 		throw new UnsupportedOperationException("Not implemented.");
 	}
 
+	@Override
 	public GraphDatabaseService getGraphDatabase() {
 		return node.getGraphDatabase();
 	}
 
+	@Override
 	public boolean hasProperty(String key) {
 		return versionContext.hasProperty(node, key);
 	}
 
+	@Override
 	public Object getProperty(String key) {
 		return versionContext.getProperty(node, key);
 	}
 
+	@Override
 	public Object getProperty(String key, Object defaultValue) {
 		return versionContext.getProperty(node, key, defaultValue);
 	}
 
+	@Override
 	public void setProperty(String key, Object value) {
 		node.setProperty(key, value);
 	}
 
+	@Override
 	public Object removeProperty(String key) {
 		return node.removeProperty(key);
 	}
 
+	@Override
 	public Iterable<String> getPropertyKeys() {
 		return versionContext.getPropertyKeys(node);
 	}
@@ -178,5 +202,29 @@ public class VersionedNode implements Node {
 	@Override
 	public boolean equals(Object obj) {
 		return node.equals(obj);
+	}
+
+	@Override
+	public void addLabel(Label label) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void removeLabel(Label label) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public boolean hasLabel(Label label) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Iterable<Label> getLabels() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
