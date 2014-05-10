@@ -1,7 +1,5 @@
 package org.neo4j.support.versioning.util;
 
-import java.util.List;
-
 /**
  * Holds all versioning-specific properties
  *
