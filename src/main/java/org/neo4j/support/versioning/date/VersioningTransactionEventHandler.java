@@ -19,15 +19,6 @@
  */
 package org.neo4j.support.versioning.date;
 
-import static org.neo4j.support.versioning.Range.range;
-import static org.neo4j.support.versioning.date.VersionContext.getStartVersion;
-import static org.neo4j.support.versioning.date.VersionContext.setEndVersion;
-import static org.neo4j.support.versioning.date.VersionContext.setStartVersion;
-import static org.neo4j.support.versioning.date.VersionContext.setVersion;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -35,11 +26,20 @@ import org.neo4j.graphdb.event.PropertyEntry;
 import org.neo4j.graphdb.event.TransactionData;
 import org.neo4j.graphdb.event.TransactionEventHandler;
 import org.neo4j.support.versioning.Range;
+import org.neo4j.support.versioning.util.VersioningProperty;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.neo4j.support.versioning.Range.range;
+import static org.neo4j.support.versioning.date.VersionContext.*;
 
 public class VersioningTransactionEventHandler implements TransactionEventHandler<Object> {
 	private static final String LATEST_VERSION_PROP_KEY = "__LATEST_VERSION__";
 	public static final String LOCK_PROP_KEY = "__DUMMY_LOCK__";
 	private final Node versionDataNode;
+
+    private int currentTransactionCount = 0;
 
 	public VersioningTransactionEventHandler(Node versionDataNode) {
 		this.versionDataNode = versionDataNode;
@@ -47,11 +47,14 @@ public class VersioningTransactionEventHandler implements TransactionEventHandle
 
 	@Override
 	public Object beforeCommit(TransactionData data) throws Exception {
-		long version = getNextVersionNumber();
-		processCreatedNodes(version, data.createdNodes());
-		processCreatedRelationships(version, data.createdRelationships());
-		processMarkedDeletedRelationships(version, data.assignedRelationshipProperties());
-		rotateProperties(version, findModifiedProperties(version, data));
+
+        if (currentTransactionCount++ == 0) {
+            long version = getNextVersionNumber();
+            processCreatedNodes(version, data.createdNodes());
+            processCreatedRelationships(version, data.createdRelationships());
+            processMarkedDeletedRelationships(version, data.assignedRelationshipProperties());
+            rotateProperties(version, findModifiedProperties(version, data));
+        }
 		return null;
 	}
 
@@ -79,7 +82,7 @@ public class VersioningTransactionEventHandler implements TransactionEventHandle
 
 	private static void processMarkedDeletedRelationships(long version, Iterable<PropertyEntry<Relationship>> relationshipProperties) {
 		for (PropertyEntry<Relationship> relationshipPropertyEntry : relationshipProperties) {
-			if (relationshipPropertyEntry.key().equals(VersionContext.DELETED_PROP_KEY)) {
+			if (relationshipPropertyEntry.key().equals(VersioningProperty.DELETED_PROP_KEY.getName())) {
 				Relationship rel = relationshipPropertyEntry.entity();
 				setEndVersion(rel, version - 1);
 			}
@@ -87,19 +90,19 @@ public class VersioningTransactionEventHandler implements TransactionEventHandle
 	}
 
 	private static Map<Node, Map<String, Object>> findModifiedProperties(long version, TransactionData data) {
-		Map<Node, Map<String, Object>> modifiedPropsByNode = new HashMap<Node, Map<String, Object>>();
+		Map<Node, Map<String, Object>> modifiedPropsByNode = new HashMap<>();
 		for (PropertyEntry<Node> nodePropertyEntry : data.assignedNodeProperties()) {
-			if (nodePropertyEntry.key().equals(VersionContext.DELETED_PROP_KEY)) {
+			if (nodePropertyEntry.key().equals(VersioningProperty.DELETED_PROP_KEY.getName())) {
 				setEndVersion(nodePropertyEntry.entity(), version - 1);
 				continue;
 			}
-			if (isInternalProperty(nodePropertyEntry)) {
+			if (VersioningProperty.isInternalProperty(nodePropertyEntry.key())) {
 				continue;
 			}
 			addEntryToMap(nodePropertyEntry, modifiedPropsByNode);
 		}
 		for (PropertyEntry<Node> nodePropertyEntry : data.removedNodeProperties()) {
-			if (isInternalProperty(nodePropertyEntry)) {
+			if (VersioningProperty.isInternalProperty(nodePropertyEntry.key())) {
 				continue;
 			}
 			addEntryToMap(nodePropertyEntry, modifiedPropsByNode);
@@ -107,14 +110,10 @@ public class VersioningTransactionEventHandler implements TransactionEventHandle
 		return modifiedPropsByNode;
 	}
 
-	private static boolean isInternalProperty(PropertyEntry<Node> nodePropertyEntry) {
-		return nodePropertyEntry.key().equals(VersionContext.VALID_FROM_PROPERTY) || nodePropertyEntry.key().equals(VersionContext.VALID_TO_PROPERTY);
-	}
-
 	private static void addEntryToMap(PropertyEntry<Node> nodePropertyEntry, Map<Node, Map<String, Object>> modifiedPropsByNode) {
 		Map<String, Object> modifiedProps = modifiedPropsByNode.get(nodePropertyEntry.entity());
 		if (modifiedProps == null) {
-			modifiedProps = new HashMap<String, Object>();
+			modifiedProps = new HashMap<>();
 			modifiedPropsByNode.put(nodePropertyEntry.entity(), modifiedProps);
 		}
 		modifiedProps.put(nodePropertyEntry.key(), nodePropertyEntry.previouslyCommitedValue());
@@ -158,10 +157,12 @@ public class VersioningTransactionEventHandler implements TransactionEventHandle
 
 	@Override
 	public void afterCommit(TransactionData data, Object state) {
+        currentTransactionCount--;
 	}
 
 	@Override
 	public void afterRollback(TransactionData data, Object state) {
+        currentTransactionCount--;
 	}
 
 	public void setLatestVersion(long version) {

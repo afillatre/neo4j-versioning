@@ -71,7 +71,7 @@ public class Range implements Comparable<Range>
 
     public static Set<Range> asSet( Range... items )
     {
-        return new HashSet<Range>( Arrays.asList( items ) );
+        return new HashSet<>( Arrays.asList( items ) );
     }
 
     private Range realUnion( Range other )
@@ -104,10 +104,8 @@ public class Range implements Comparable<Range>
 
         Range range = (Range) o;
 
-        if ( from != range.from ) return false;
-        if ( to != range.to ) return false;
+        return from == range.from && to == range.to;
 
-        return true;
     }
 
     @Override
@@ -121,13 +119,16 @@ public class Range implements Comparable<Range>
     @Override
 	public int compareTo( Range o )
     {
+        if (o == null) {
+            return -1;
+        }
         return Long.valueOf( from ).compareTo( o.from );
     }
 
     public static List<Range> compactRanges( Collection<Range> ranges )
     {
-        List<Range> result = new ArrayList<Range>();
-        takeNextRangeAndMergeOverlappingRanges( new ArrayList<Range>( ranges ), result );
+        List<Range> result = new ArrayList<>();
+        takeNextRangeAndMergeOverlappingRanges( new ArrayList<>( ranges ), result );
         Collections.sort( result );
         return result;
     }

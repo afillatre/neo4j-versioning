@@ -30,14 +30,13 @@ import org.neo4j.helpers.Predicate;
 import org.neo4j.helpers.collection.FilteringIterable;
 import org.neo4j.helpers.collection.IterableWrapper;
 import org.neo4j.support.versioning.Range;
+import org.neo4j.support.versioning.util.VersioningProperty;
 
 public class VersionContext {
 
-	public static final String VALID_FROM_PROPERTY = "__valid_from__";
-	public static final String VALID_TO_PROPERTY = "__valid_to__";
-	public static final RelationshipType PREV_VERSION_REL_TYPE = DynamicRelationshipType.withName("__PREV_VERSION__");
-	public static final String DELETED_PROP_KEY = "__deleted__";
-	private long version;
+    public static final long DEFAULT_VERSION = -1L;
+    public static final RelationshipType PREV_VERSION_REL_TYPE = DynamicRelationshipType.withName("__PREV_VERSION__");
+    private long version;
 
 	public static VersionContext vc(long version) {
 		return new VersionContext(version);
@@ -94,20 +93,21 @@ public class VersionContext {
 	}
 
 	private Iterable<String> rawGetPropertyKeys(Node propHolderNode) {
-		return new FilteringIterable<String>(propHolderNode.getPropertyKeys(), new Predicate<String>() {
+		return new FilteringIterable<>(propHolderNode.getPropertyKeys(), new Predicate<String>() {
 			@Override
 			public boolean accept(String item) {
-				return !item.equals(VALID_FROM_PROPERTY) && !item.equals(VALID_TO_PROPERTY);
+				return !item.equals(VersioningProperty.VALID_FROM_PROPERTY.getName()) &&
+                        !item.equals(VersioningProperty.VALID_TO_PROPERTY.getName());
 			}
 		});
 	}
 
 	public void deleteRelationship(Relationship relationship) {
-		relationship.setProperty(DELETED_PROP_KEY, version);
+		relationship.setProperty(VersioningProperty.DELETED_PROP_KEY.getName(), version);
 	}
 
 	public void deleteNode(Node node) {
-		node.setProperty(DELETED_PROP_KEY, version);
+		node.setProperty(VersioningProperty.DELETED_PROP_KEY.getName(), version);
 	}
 
 	private static Node copyPropsToNewNode(Node node) {
@@ -146,25 +146,25 @@ public class VersionContext {
 	}
 
 	public static void setStartVersion(PropertyContainer entity, long startVersion) {
-		entity.setProperty(VALID_FROM_PROPERTY, startVersion);
+		entity.setProperty(VersioningProperty.VALID_FROM_PROPERTY.getName(), startVersion);
 	}
 
 	public static void setEndVersion(PropertyContainer entity, long endVersion) {
-		entity.setProperty(VALID_TO_PROPERTY, endVersion);
+		entity.setProperty(VersioningProperty.VALID_TO_PROPERTY.getName(), endVersion);
 	}
 
 	public static long getStartVersion(PropertyContainer entity) {
-		return (Long) entity.getProperty(VALID_FROM_PROPERTY, -1L);
+		return (Long) entity.getProperty(VersioningProperty.VALID_FROM_PROPERTY.getName(), DEFAULT_VERSION);
 	}
 
 	public static long getEndVersion(PropertyContainer entity) {
-		return (Long) entity.getProperty(VALID_TO_PROPERTY, -1L);
+		return (Long) entity.getProperty(VersioningProperty.VALID_TO_PROPERTY.getName(), DEFAULT_VERSION);
 	}
 
 	public static Range getVersion(PropertyContainer propertyContainer) {
-		Object from = propertyContainer.getProperty(VALID_FROM_PROPERTY, null);
-		Object to = propertyContainer.getProperty(VALID_TO_PROPERTY, null);
-		if (from == null || to == null) {
+		Object from = getStartVersion(propertyContainer);
+		Object to = getEndVersion(propertyContainer);
+		if (from == DEFAULT_VERSION || to == DEFAULT_VERSION) {
 			return null;
 		}
 		return new Range((Long) from, (Long) to);

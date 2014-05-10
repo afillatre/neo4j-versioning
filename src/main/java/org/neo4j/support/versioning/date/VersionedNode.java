@@ -19,8 +19,6 @@
  */
 package org.neo4j.support.versioning.date;
 
-import java.util.Iterator;
-
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Label;
@@ -34,6 +32,8 @@ import org.neo4j.graphdb.Traverser;
 import org.neo4j.helpers.Predicate;
 import org.neo4j.helpers.collection.FilteringIterable;
 import org.neo4j.helpers.collection.IterableWrapper;
+
+import java.util.Iterator;
 
 public class VersionedNode implements Node {
 	private Node node;
@@ -80,7 +80,7 @@ public class VersionedNode implements Node {
 	}
 
 	private Iterable<Relationship> getValidRelationships(Iterable<Relationship> relationships) {
-		return new IterableWrapper<Relationship, Relationship>(new FilteringIterable<Relationship>(relationships, new Predicate<Relationship>() {
+		return new IterableWrapper<Relationship, Relationship>(new FilteringIterable<>(relationships, new Predicate<Relationship>() {
 			@Override
 			public boolean accept(Relationship item) {
 				boolean valid = versionContext.hasValidVersion(item);
